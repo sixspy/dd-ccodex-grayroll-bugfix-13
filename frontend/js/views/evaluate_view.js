@@ -1,4 +1,5 @@
 import { api } from "../api.js";
+import { fmtTime } from "../time.js";
 const { ref, onMounted } = Vue;
 export const EvaluateView = {
   setup() {
@@ -11,7 +12,7 @@ export const EvaluateView = {
       catch (e) { err.value = e.message || String(e); }
     }
     onMounted(reloadBoard);
-    return { form, result, board, err, run, reloadBoard };
+    return { form, result, board, err, run, reloadBoard, fmtTime };
   },
   template: `
   <div class="grid">
@@ -29,10 +30,10 @@ export const EvaluateView = {
     <div class="panel span-7">
       <h2>正式规则板</h2>
       <table v-if="board">
-        <thead><tr><th>开关</th><th>环境</th><th>类型</th><th>%</th><th>版本</th></tr></thead>
+        <thead><tr><th>开关</th><th>环境</th><th>类型</th><th>%</th><th>版本</th><th>更新时间</th></tr></thead>
         <tbody>
           <tr v-for="(r,i) in board.rules" :key="i">
-            <td>{{ r.flag_key }}</td><td>{{ r.env_code }}</td><td>{{ r.kind }}</td><td>{{ r.percent }}</td><td>v{{ r.version }}</td>
+            <td>{{ r.flag_key }}</td><td>{{ r.env_code }}</td><td>{{ r.kind }}</td><td>{{ r.percent }}</td><td>v{{ r.version }}</td><td>{{ fmtTime(r.updated_at) }}</td>
           </tr>
         </tbody>
       </table>

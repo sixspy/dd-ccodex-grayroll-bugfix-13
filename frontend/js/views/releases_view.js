@@ -1,8 +1,10 @@
 import { api } from "../api.js";
+import { fmtTime } from "../time.js";
 const { ref, onMounted } = Vue;
 export const ReleasesView = {
   setup() {
     const official = ref([]); const shadows = ref([]);
+    const review = ref(null);
     const form = ref({
       flag_id: 3, env_id: 1, kind: "percent", percent: 30, cohort_id: null,
       summary: "开发环境三成灰度试跑", use_shadow: false,
@@ -11,6 +13,7 @@ export const ReleasesView = {
     async function reload() {
       const res = await api("/api/releases");
       official.value = res.official || []; shadows.value = res.shadows || [];
+      review.value = await api("/api/releases/review");
     }
     async function publish() {
       err.value = ""; msg.value = "";
@@ -26,7 +29,7 @@ export const ReleasesView = {
       catch (e) { err.value = e.message || String(e); }
     }
     onMounted(reload);
-    return { official, shadows, form, err, msg, publish, promote, reload };
+    return { official, shadows, review, form, err, msg, publish, promote, reload, fmtTime };
   },
   template: `
   <div class="grid">
@@ -47,10 +50,11 @@ export const ReleasesView = {
     </div>
     <div class="panel span-7">
       <h2>正式发布</h2>
-      <table><thead><tr><th>开关</th><th>环境</th><th>版本</th><th>说明</th></tr></thead>
+      <p class="muted" v-if="review">{{ review.review_ok ? '历史与发布时序同源，复核通过' : '历史与发布时序不一致，复核未通过' }}（配对 {{ review.matched }} / 错位 {{ review.mismatched }}）</p>
+      <table><thead><tr><th>开关</th><th>环境</th><th>版本</th><th>发布时间</th><th>说明</th></tr></thead>
       <tbody>
         <tr v-for="r in official" :key="r.id">
-          <td>{{ r.flag_key }}</td><td>{{ r.env_code }}</td><td>v{{ r.version }}</td><td>{{ r.summary }}</td>
+          <td>{{ r.flag_key }}</td><td>{{ r.env_code }}</td><td>v{{ r.version }}</td><td>{{ fmtTime(r.published_at) }}</td><td>{{ r.summary }}</td>
         </tr>
       </tbody></table>
       <h2 style="margin-top:1rem">影子发布</h2>

@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from auth import current_user
 from db import connect
 from policies import combine_rule, eval_percent
+from timeutil import UNIT, is_millis, seconds_of
 from validators import require_str
 
 router = APIRouter(prefix="/api/evaluate", tags=["evaluate"])
@@ -106,7 +107,7 @@ def eval_board(authorization: str | None = Header(default=None)):
             dict(r)
             for r in conn.execute(
                 """
-                SELECT f.key AS flag_key, f.status, e.code AS env_code, r.kind, r.percent, r.version, r.cohort_id
+                SELECT f.key AS flag_key, f.status, e.code AS env_code, r.kind, r.percent, r.version, r.cohort_id, r.updated_at
                 FROM flag_rules r
                 JOIN flags f ON f.id=r.flag_id
                 JOIN environments e ON e.id=r.env_id
@@ -119,4 +120,9 @@ def eval_board(authorization: str | None = Header(default=None)):
             dict(x)
             for x in conn.execute("SELECT status, COUNT(*) c FROM flags GROUP BY status").fetchall()
         ]
-    return {"rules": rows, "by_status": by_status}
+    for r in rows:
+        raw = r.get("updated_at")
+        r["updated_at"] = seconds_of(raw)
+        r["updated_at_unit"] = UNIT
+        r["unit_misaligned"] = is_millis(raw)
+    return {"rules": rows, "by_status": by_status, "unit": UNIT}

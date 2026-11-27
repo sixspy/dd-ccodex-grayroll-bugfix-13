@@ -1,4 +1,5 @@
 import { api } from "../api.js";
+import { fmtTime } from "../time.js";
 const { ref, onMounted } = Vue;
 export const FlagsView = {
   setup() {
@@ -12,7 +13,7 @@ export const FlagsView = {
       catch (e) { err.value = e.message || String(e); }
     }
     onMounted(reload);
-    return { items, form, err, create, reload };
+    return { items, form, err, create, reload, fmtTime };
   },
   template: `
   <div class="grid">
@@ -27,12 +28,12 @@ export const FlagsView = {
     <div class="panel span-7">
       <h2>开关列表</h2>
       <table>
-        <thead><tr><th>键</th><th>标题</th><th>状态</th><th>负责人</th></tr></thead>
+        <thead><tr><th>键</th><th>标题</th><th>状态</th><th>负责人</th><th>登记时间</th></tr></thead>
         <tbody>
           <tr v-for="it in items" :key="it.id">
             <td><code>{{ it.key }}</code></td><td>{{ it.title }}</td>
             <td><span class="pill" :class="{'danger': it.status==='killed'}">{{ it.status_label || it.status }}</span></td>
-            <td>{{ it.owner }}</td>
+            <td>{{ it.owner }}</td><td>{{ fmtTime(it.created_at) }}</td>
           </tr>
         </tbody>
       </table>

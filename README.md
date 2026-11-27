@@ -16,6 +16,23 @@
 
 正确性口径只能走甲乙中的一种且两边不得混用。
 
+## 时间口径（BUGFIX-13）
+
+库内一切时间戳（`created_at` / `published_at` / `updated_at`）皆为**秒**级 REAL。
+所有列表面统一以 `created_at_unit="s"` 输出；前端一律经 `frontend/js/time.js`
+的 `fmtTime()` 按秒换算，禁止把秒级戳直接塞进 `new Date()`（否则错到 1970）。
+
+- 历史 / 审计 / 总览 / 发布 / 求值 / 开关各页同一口径。
+- 发布复核 `GET /api/releases/review` 在同一读事务内跨表联查 `releases` 与
+  `change_history`，逐对比较发布时间须同源同戳（`review_ok`、`matched`、`mismatched`）。
+- 总览 `timeline_review.reviewed` 仅在线时间线对齐时为真；错位时间线不得当成已复核。
+
+## 历史刷新互斥
+
+`POST /api/history/refresh` 抢 `history-refresh` 行锁：并发时恰一方胜出并做正式
+改，败方 409、只留争用痕（`/api/locks/contention`）、零正式改。`locks.acquire`
+用条件 upsert 原子抢锁并提交，杜绝 SELECT-then-INSERT 的 TOCTOU 双成。
+
 ## 一键起环境
 
 ```bash

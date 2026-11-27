@@ -10,6 +10,7 @@ from audit_svc import write_audit, write_history
 from auth import current_user, require_writer
 from db import connect
 from models import FLAG_STATUS_LABEL
+from timeutil import UNIT, seconds_of
 from validators import require_flag_key, require_str
 
 router = APIRouter(prefix="/api/flags", tags=["flags"])
@@ -29,7 +30,9 @@ def list_flags(authorization: str | None = Header(default=None)):
         rows = [dict(r) for r in conn.execute("SELECT * FROM flags ORDER BY id").fetchall()]
     for r in rows:
         r["status_label"] = FLAG_STATUS_LABEL.get(r["status"], r["status"])
-    return {"items": rows}
+        r["created_at"] = seconds_of(r["created_at"])
+        r["created_at_unit"] = UNIT
+    return {"items": rows, "unit": UNIT}
 
 
 @router.get("/{flag_id}")
@@ -41,6 +44,8 @@ def get_flag(flag_id: int, authorization: str | None = Header(default=None)):
         raise HTTPException(404, detail="开关不存在")
     d = dict(row)
     d["status_label"] = FLAG_STATUS_LABEL.get(d["status"], d["status"])
+    d["created_at"] = seconds_of(d["created_at"])
+    d["created_at_unit"] = UNIT
     return d
 
 

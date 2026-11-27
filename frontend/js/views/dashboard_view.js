@@ -1,4 +1,5 @@
 import { api } from "../api.js";
+import { fmtTime } from "../time.js";
 const { ref, onMounted } = Vue;
 export const DashboardView = {
   setup() {
@@ -11,7 +12,7 @@ export const DashboardView = {
       } catch (e) { err.value = e.message || String(e); }
     }
     onMounted(reload);
-    return { data, health, err, reload };
+    return { data, health, err, reload, fmtTime };
   },
   template: `
   <div class="grid">
@@ -19,6 +20,7 @@ export const DashboardView = {
       <h2>发布控制台</h2>
       <p class="muted">{{ health && health.skeleton }}</p>
       <div class="err" v-if="err">{{ err }}</div>
+      <p class="muted" v-if="data && data.timeline_review && !data.timeline_review.reviewed">时间线错位，复核未通过。</p>
     </div>
     <div class="panel span-4" v-if="data"><div class="muted">开关数</div><p class="stat">{{ data.flags }}</p></div>
     <div class="panel span-4" v-if="data"><div class="muted">已生效</div><p class="stat">{{ data.active }}</p></div>
@@ -30,8 +32,8 @@ export const DashboardView = {
     </div>
     <div class="panel span-6" v-if="data">
       <h2>最近变更</h2>
-      <table><thead><tr><th>动作</th><th>详情</th><th>操作者</th></tr></thead>
-      <tbody><tr v-for="h in data.recent" :key="h.id"><td>{{ h.action }}</td><td>{{ h.detail }}</td><td>{{ h.actor }}</td></tr></tbody></table>
+      <table><thead><tr><th>时间</th><th>动作</th><th>详情</th><th>操作者</th></tr></thead>
+      <tbody><tr v-for="h in data.recent" :key="h.id"><td>{{ fmtTime(h.created_at) }}</td><td>{{ h.action }}</td><td>{{ h.detail }}</td><td>{{ h.actor }}</td></tr></tbody></table>
       <button class="btn secondary" style="margin-top:0.7rem" @click="reload">刷新</button>
     </div>
   </div>`
